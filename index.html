@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sketch on Your Own — Photo to Step-by-Step Drawing Guide</title>
+  <meta name="description" content="Upload any photo and get point-by-point visual animations and written instructions to draw its sketch using the grid method." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">✏️</span>
+      <div>
+        <h1>Sketch on Your Own</h1>
+        <p class="tagline">Upload a photo → follow the grid, step by step, and draw it yourself.</p>
+      </div>
+    </div>
+    <button id="helpBtn" class="ghost-btn" title="How it works">How it works</button>
+  </header>
+
+  <!-- Upload / landing -->
+  <section id="uploadView" class="upload-view">
+    <div id="dropZone" class="dropzone">
+      <div class="dropzone-inner">
+        <div class="drop-icon">🖼️</div>
+        <h2>Drop a photo here</h2>
+        <p>or click to choose an image — a face, a pet, an object, anything.</p>
+        <button id="pickBtn" class="primary-btn">Choose an image</button>
+        <input id="fileInput" type="file" accept="image/*" hidden />
+        <p class="hint">Everything runs privately in your browser. Your photo is never uploaded anywhere.</p>
+      </div>
+    </div>
+
+    <div class="samples">
+      <span>No photo handy? Try a sample:</span>
+      <div class="sample-row" id="sampleRow"></div>
+    </div>
+  </section>
+
+  <!-- Studio -->
+  <section id="studioView" class="studio-view" hidden>
+    <div class="studio-controls">
+      <button id="newImageBtn" class="ghost-btn">↩ New image</button>
+
+      <label class="ctrl">
+        <span>Grid detail</span>
+        <select id="gridSelect">
+          <option value="4">Coarse (4 columns)</option>
+          <option value="6" selected>Balanced (6 columns)</option>
+          <option value="8">Fine (8 columns)</option>
+          <option value="10">Very fine (10 columns)</option>
+        </select>
+      </label>
+
+      <label class="ctrl">
+        <span>Line sensitivity</span>
+        <input id="detailRange" type="range" min="0" max="100" value="45" />
+      </label>
+
+      <label class="ctrl">
+        <span>Speed</span>
+        <select id="speedSelect">
+          <option value="0.5">Slow</option>
+          <option value="1" selected>Normal</option>
+          <option value="2">Fast</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="studio-grid">
+      <!-- Reference -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Reference photo</h3>
+          <span class="panel-sub">The highlighted cell is the one you're drawing now.</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="refCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Your paper -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Your drawing</h3>
+          <span class="panel-sub">Watch the instructor draw, then copy it onto your paper.</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="drawCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instruction bar -->
+    <div class="instruction-bar">
+      <div class="step-counter">
+        <span id="stepNum">0</span><span class="muted"> / </span><span id="stepTotal">0</span>
+      </div>
+      <div class="instruction-text">
+        <span id="stepTitle" class="step-title">Getting ready…</span>
+        <p id="stepText">Loading your image.</p>
+      </div>
+      <div class="transport">
+        <button id="prevBtn" class="round-btn" title="Previous step">⏮</button>
+        <button id="playBtn" class="round-btn play" title="Play / pause">▶</button>
+        <button id="nextBtn" class="round-btn" title="Next step">⏭</button>
+        <button id="restartBtn" class="round-btn" title="Restart">⟲</button>
+      </div>
+    </div>
+
+    <!-- Step list -->
+    <details class="steps-list" open>
+      <summary>All steps</summary>
+      <ol id="stepsOl"></ol>
+    </details>
+  </section>
+
+  <!-- Help modal -->
+  <div id="helpModal" class="modal" hidden>
+    <div class="modal-card">
+      <button id="helpClose" class="modal-close">×</button>
+      <h2>How it works</h2>
+      <ol class="help-steps">
+        <li><b>Upload a photo.</b> It stays in your browser — nothing is sent to a server.</li>
+        <li><b>We lay a grid over it</b> — the classic artist's technique for copying proportions accurately.</li>
+        <li><b>We trace the edges</b> of your photo to figure out the sketch lines.</li>
+        <li><b>Draw the same grid</b> lightly on your paper (same number of rows &amp; columns).</li>
+        <li><b>Follow each step.</b> For every grid cell you'll get a written instruction and an animation showing exactly what lines go there.</li>
+        <li><b>Erase the grid</b> at the end — and you've drawn the photo!</li>
+      </ol>
+      <p class="help-tip">💡 Tip: Draw the grid on your paper very lightly in pencil so it's easy to erase later.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span>Runs 100% in your browser · no accounts · no uploads · free forever</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
