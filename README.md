@@ -12,11 +12,25 @@ No accounts. No uploads. No API keys. **100% free and runs entirely in your brow
 2. The app lays a **rectangular grid** over the photo — the same technique artists use to copy
    proportions accurately.
 3. It **traces the edges** of the photo to work out the sketch lines.
-4. It then acts like an **instructor**, going cell by cell:
-   - A **written instruction** tells you what to draw in that cell (how many lines, their
-     direction, how light/dark to shade).
-   - A **visual animation** draws those exact lines on a blank canvas, so you can copy them.
-5. At the end, you **erase the grid** — and you've drawn the photo.
+4. The **full sketch is shown right away**. You don't have to sit through a slideshow —
+   click **any step** (or a cell in the list) and just that grid cell is re-drawn with a
+   highlight so you can study it. There's also a **▶ Watch it drawn** button that builds the
+   whole sketch from blank paper, and a **Play** button that takes you on a guided cell-by-cell
+   tour.
+5. Every step gives a **written instruction** (how many lines, their direction, how light/dark
+   to shade) alongside the visual.
+6. At the end, you **erase the grid** — and you've drawn the photo.
+
+### 👤 Face-aware
+
+Portraits get special treatment. The most important part of a portrait is the face, so the app:
+
+- **Finds the face** using skin-tone analysis (YCbCr — works across skin tones, no libraries or
+  network), shown as a dashed box on the reference photo.
+- Draws the **face with much higher detail and darker, crisper lines** so the eyes, brows, nose
+  and mouth actually come through.
+- **Declutters busy backgrounds** (foliage, texture) with adaptive thresholding, so the subject
+  stands out instead of getting lost in noise.
 
 ## How to use it
 
@@ -45,11 +59,16 @@ Everything is done client-side with the Canvas API:
 
 - The image is scaled to a working resolution and converted to grayscale.
 - A light blur + **Sobel operator** computes edge magnitude and gradient direction.
-- Edges are thresholded and rendered as clean black lines on white (the "sketch").
+- Edge strength is **normalized by a high percentile** (not the raw max) so a few very strong
+  background edges can't crush the subtle facial edges.
+- A **skin-tone (YCbCr) pass** locates the face region.
+- Edges are kept using an **adaptive, face-aware threshold**: low (sensitive) inside the face,
+  higher in busy background areas — then rendered as dark lines on white.
 - The grid is overlaid, and each cell is analyzed for **brightness**, **edge density**, and
-  **dominant line orientation** — which is turned into a plain-English instruction.
-- Each cell's lines are revealed with a left-to-right "pencil" animation, accumulating into the
-  finished drawing.
+  **dominant line orientation** — which is turned into a plain-English instruction (face cells
+  are flagged so you take extra care there).
+- The finished sketch is shown at once; selecting a step re-reveals that single cell with a
+  left-to-right "pencil" animation.
 
 ## Files
 

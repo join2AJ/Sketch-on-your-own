@@ -280,7 +280,8 @@ canvas { max-width: 100%; height: auto; border-radius: 10px; display: block; }
   color: var(--text);
   outline: 1px solid rgba(255, 179, 71, 0.4);
 }
-.steps-list li.done { color: var(--good); }
+.steps-list li.face-step { color: #cdb4ff; }
+.steps-list li.face-step .cell-tag { color: #b98bff; }
 .steps-list li .cell-tag {
   font-weight: 700;
   color: var(--accent-2);
