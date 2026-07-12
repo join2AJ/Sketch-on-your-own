@@ -12,25 +12,35 @@ No accounts. No uploads. No API keys. **100% free and runs entirely in your brow
 2. The app lays a **rectangular grid** over the photo — the same technique artists use to copy
    proportions accurately.
 3. It **traces the edges** of the photo to work out the sketch lines.
-4. The **full sketch is shown right away**. You don't have to sit through a slideshow —
-   click **any step** (or a cell in the list) and just that grid cell is re-drawn with a
-   highlight so you can study it. There's also a **▶ Watch it drawn** button that builds the
-   whole sketch from blank paper, and a **Play** button that takes you on a guided cell-by-cell
-   tour.
-5. Every step gives a **written instruction** (how many lines, their direction, how light/dark
-   to shade) alongside the visual.
-6. At the end, you **erase the grid** — and you've drawn the photo.
+4. You're taught **in phases, the way real instructors teach** (see
+   [`resources/`](./resources/) for the research behind this):
+   1. **Overview** — set up the grid.
+   2. **Block-in** — lay down only the big shapes first.
+   3. **Proportions** — for portraits, Loomis-style guide lines (brow / eye / nose / mouth).
+   4. **Detail** — clean sketch lines revealed one grid cell at a time, **face first**.
+   5. **Shading** — squint for the darks, then build them with hatching.
+   6. **Finish** — erase the grid; you've drawn the photo.
+5. The **full sketch is shown right away** — click **any step** to replay just that part, hit
+   **▶ Watch it drawn** to build the whole thing from blank paper, or **Play** for a guided tour.
+6. Every step has a **written instruction** alongside the visual.
+
+### ✨ Clean lines, not a photocopy
+
+The sketch lines come from **XDoG (eXtended Difference-of-Gaussians)**, not raw edge detection.
+Plain edge detection traces every skin pore, shadow and bit of texture, so faces came out as a
+muddy scribble. XDoG's base blur skips fine texture and produces **thin, connected, hand-drawn
+-looking lines**. Full write-up in
+[`resources/photo-to-lineart-algorithms.md`](./resources/photo-to-lineart-algorithms.md).
 
 ### 👤 Face-aware
 
-Portraits get special treatment. The most important part of a portrait is the face, so the app:
+The most important part of a portrait is the face, so the app:
 
 - **Finds the face** using skin-tone analysis (YCbCr — works across skin tones, no libraries or
   network), shown as a dashed box on the reference photo.
-- Draws the **face with much higher detail and darker, crisper lines** so the eyes, brows, nose
-  and mouth actually come through.
-- **Declutters busy backgrounds** (foliage, texture) with adaptive thresholding, so the subject
-  stands out instead of getting lost in noise.
+- Adds **Loomis proportion guides** so features are placed correctly (the eyes sit halfway down
+  the head — the #1 beginner fix).
+- **Draws the face first**, before the background.
 
 ## How to use it
 
@@ -55,20 +65,22 @@ python3 -m http.server 8000
 
 ## How it works under the hood
 
-Everything is done client-side with the Canvas API:
+Everything is done client-side with the Canvas API — no libraries, no network:
 
 - The image is scaled to a working resolution and converted to grayscale.
-- A light blur + **Sobel operator** computes edge magnitude and gradient direction.
-- Edge strength is **normalized by a high percentile** (not the raw max) so a few very strong
-  background edges can't crush the subtle facial edges.
-- A **skin-tone (YCbCr) pass** locates the face region.
-- Edges are kept using an **adaptive, face-aware threshold**: low (sensitive) inside the face,
-  higher in busy background areas — then rendered as dark lines on white.
-- The grid is overlaid, and each cell is analyzed for **brightness**, **edge density**, and
-  **dominant line orientation** — which is turned into a plain-English instruction (face cells
-  are flagged so you take extra care there).
-- The finished sketch is shown at once; selecting a step re-reveals that single cell with a
-  left-to-right "pencil" animation.
+- **XDoG** (two Gaussian blurs + a sharpening term + a tanh soft-threshold) produces the clean
+  line art. It runs twice: a bold, large-blur pass for the **block-in** outline, and a finer
+  pass for the **detail** line work.
+- A **skin-tone (YCbCr)** pass locates the face and derives **Loomis proportion guides**.
+- The photo is quantised into value bands to drive the **hatched shading** layer.
+- The grid is overlaid, and each cell is analyzed for **brightness**, **line density**, and
+  **dominant line orientation** — turned into a plain-English instruction. Cells are ordered
+  **face-first**.
+- The finished line drawing is shown at once; selecting a step replays just that phase/cell
+  with a "pencil" animation.
+
+See the [`resources/`](./resources/) folder for the drawing-pedagogy and image-processing
+research this is all based on.
 
 ## Files
 

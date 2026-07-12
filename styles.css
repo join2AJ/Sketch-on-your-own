@@ -220,13 +220,47 @@ canvas { max-width: 100%; height: auto; border-radius: 10px; display: block; }
   color: var(--accent);
 }
 .step-counter .muted { color: var(--muted); font-weight: 500; }
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 .step-title {
   display: inline-block;
   font-weight: 700;
-  color: var(--accent-2);
-  font-size: 13px;
+  color: var(--text);
+  font-size: 15px;
+}
+.phase-tag {
+  font-weight: 800;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #10131f;
+  background: var(--accent-2);
+}
+/* phase colours */
+.ph-overview { background: #9aa6c8; }
+.ph-block   { background: #6ea8fe; }
+.ph-guides  { background: #b98bff; }
+.ph-detail  { background: #ffb347; }
+.ph-shade   { background: #57d9a3; }
+.ph-finish  { background: #ff8fa3; }
+
+.phase-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: #10131f;
+  margin-right: 8px;
+  vertical-align: middle;
 }
 .instruction-text p { margin: 4px 0 0; font-size: 16px; line-height: 1.45; }
 .transport { display: flex; gap: 10px; align-items: center; }
@@ -312,6 +346,7 @@ canvas { max-width: 100%; height: auto; border-radius: 10px; display: block; }
 .modal-card h2 { margin: 0 0 14px; }
 .help-steps { padding-left: 20px; line-height: 1.6; }
 .help-steps li { margin-bottom: 8px; }
+.help-intro { color: var(--muted); margin: 0 0 12px; }
 .help-tip {
   margin-top: 16px;
   padding: 12px 14px;
