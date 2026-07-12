@@ -7,6 +7,7 @@ guesswork.
 | File | What's inside |
 |------|---------------|
 | [`sketching-methodologies.md`](./sketching-methodologies.md) | How people are actually taught to draw: the grid method, the Loomis method, block-in, construction/proportion lines, and shading stages. |
+| [`facial-features.md`](./facial-features.md) | How to draw each feature — eyes, eyebrows, nose, lips/mouth, ears — plus the proportions that place them. Drives the face rendering and the feature-specific instructions. |
 | [`photo-to-lineart-algorithms.md`](./photo-to-lineart-algorithms.md) | How to turn a photo into clean sketch lines: Sobel vs. Difference-of-Gaussians vs. **XDoG** vs. Canny, with formulas and parameters. Explains *why we switched away from Sobel*. |
 | [`user-research.md`](./user-research.md) | What beginners want and struggle with in drawing tutorials, and the concrete product decisions that came out of it. |
 

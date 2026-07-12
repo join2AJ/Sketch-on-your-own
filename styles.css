@@ -346,6 +346,33 @@ canvas { max-width: 100%; height: auto; border-radius: 10px; display: block; }
 .modal-card h2 { margin: 0 0 14px; }
 .help-steps { padding-left: 20px; line-height: 1.6; }
 .help-steps li { margin-bottom: 8px; }
+.primary-btn.small {
+  margin-top: 0;
+  padding: 9px 14px;
+  font-size: 14px;
+  box-shadow: none;
+}
+.export-block {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--bg-2);
+}
+.export-block h3 { margin: 0 0 4px; font-size: 15px; }
+.export-sub { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.export-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+.export-opts label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.export-opts input { accent-color: var(--accent); }
+.export-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
 .help-intro { color: var(--muted); margin: 0 0 12px; }
 .help-tip {
   margin-top: 16px;

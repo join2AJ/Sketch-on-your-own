@@ -66,6 +66,7 @@
     ang: null,
     faceBox: null,
     guides: null,
+    features: [],
     edgeCanvas: null, // detailed clean line art (white + dark lines)
     edgeMask: null, // Uint8: ink pixels (for cell analysis)
     blockCanvas: null, // bold block-in outline (big shapes only)
@@ -349,6 +350,53 @@
   const inBox = (box, x, y) =>
     box && x >= box.x0 && x < box.x1 && y >= box.y0 && y < box.y1;
 
+  // Facial feature regions, placed by Loomis proportions, each with a
+  // beginner drawing tip (see resources/facial-features.md).
+  function computeFeatures(box) {
+    if (!box) return [];
+    const bw = box.x1 - box.x0,
+      bh = box.y1 - box.y0,
+      cx = (box.x0 + box.x1) / 2;
+    const eyeY = box.y0 + 0.5 * bh;
+    const browY = box.y0 + 0.4 * bh;
+    const noseY = box.y0 + 0.64 * bh;
+    const mouthY = box.y0 + 0.83 * bh;
+    const eyeDX = bw * 0.19;
+    const box2 = ( cxx, cyy, hw, hh, type, label, tip) => ({
+      type,
+      label,
+      tip,
+      x0: cxx - hw,
+      y0: cyy - hh,
+      x1: cxx + hw,
+      y1: cyy + hh,
+    });
+    return [
+      box2(cx - eyeDX, eyeY, bw * 0.12, bh * 0.06, "eye", "eye",
+        "👁️ Eye: draw the almond shape (corners slightly pointed), a circle for the iris and a dark pupil — and leave a tiny white highlight. Darken just under the upper lid."),
+      box2(cx + eyeDX, eyeY, bw * 0.12, bh * 0.06, "eye", "eye",
+        "👁️ Eye: draw the almond shape (corners slightly pointed), a circle for the iris and a dark pupil — and leave a tiny white highlight. Darken just under the upper lid."),
+      box2(cx - eyeDX, browY, bw * 0.13, bh * 0.04, "brow", "eyebrow",
+        "〰️ Eyebrow: a soft band of short strokes along the brow line, a little darker at the inner end."),
+      box2(cx + eyeDX, browY, bw * 0.13, bh * 0.04, "brow", "eyebrow",
+        "〰️ Eyebrow: a soft band of short strokes along the brow line, a little darker at the inner end."),
+      box2(cx, noseY, bw * 0.13, bh * 0.13, "nose", "nose",
+        "👃 Nose: keep outlines light — suggest the rounded tip and two soft nostril shadows, and shade the sides. Its width matches the inner eye corners."),
+      box2(cx, mouthY, bw * 0.22, bh * 0.06, "mouth", "lips",
+        "👄 Lips: the line where the lips meet is the darkest. Upper lip is thinner (a soft 'M' / cupid's bow); the lower lip is fuller and catches light, so keep a highlight. Darken the corners."),
+      box2(box.x0 + bw * 0.03, eyeY + bh * 0.05, bw * 0.06, bh * 0.12, "ear", "ear",
+        "👂 Ear: a 'C' shape with a fold inside; it runs from about the brow line down to the nose line."),
+      box2(box.x1 - bw * 0.03, eyeY + bh * 0.05, bw * 0.06, bh * 0.12, "ear", "ear",
+        "👂 Ear: a 'C' shape with a fold inside; it runs from about the brow line down to the nose line."),
+    ];
+  }
+
+  function featureAt(x, y) {
+    for (const f of state.features)
+      if (x >= f.x0 && x < f.x1 && y >= f.y0 && y < f.y1) return f;
+    return null;
+  }
+
   // Loomis-style facial proportion guides from the face box
   function computeGuides(box) {
     if (!box) return null;
@@ -396,6 +444,36 @@
     return { canvas, mask };
   }
 
+  // Local contrast enhancement (unsharp / CLAHE-style). Faces are smoothly
+  // lit, so eyes, nostrils and the lip line are low-contrast and a plain line
+  // pass misses them. Boosting local contrast — strongest inside the face —
+  // turns those subtle features into real lines without adding global noise.
+  function enhanceForDetail() {
+    const w = state.w,
+      h = state.h,
+      n = w * h;
+    const big = gaussianBlur(state.gray, w, h, 6);
+    const box = state.faceBox;
+    const feather = Math.max(8, Math.round(Math.min(w, h) / 40));
+    const base = 0.25; // mild global crispness
+    const faceBoost = 1.05; // extra local contrast on the face
+    const out = new Float32Array(n);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        let wgt = 0;
+        if (box) {
+          const d = Math.min(x - box.x0, box.x1 - x, y - box.y0, box.y1 - y);
+          wgt = clamp(d / feather, 0, 1);
+        }
+        const amount = base + faceBoost * wgt;
+        const v = state.gray[i] + amount * (state.gray[i] - big[i]);
+        out[i] = clamp(v, 0, 255) / 255;
+      }
+    }
+    return out;
+  }
+
   function buildLines() {
     const w = state.w,
       h = state.h,
@@ -403,10 +481,13 @@
     const gray01 = new Float32Array(n);
     for (let i = 0; i < n; i++) gray01[i] = state.gray[i] / 255;
 
+    // Detail pass uses a face-enhanced version so features come through.
+    const grayDetail = enhanceForDetail();
+
     const detail = state.detail; // 0..1
     // higher detail -> smaller base blur -> finer lines (but never noisy)
     const detailSigma = 1.5 - detail * 0.75; // ~[1.5 .. 0.75]
-    const detailVals = xdog(gray01, w, h, {
+    const detailVals = xdog(grayDetail, w, h, {
       sigma: detailSigma,
       k: 1.6,
       tau: 0.985,
@@ -599,9 +680,35 @@
           orient: dom,
           hasContent: density > 0.006,
           inFace: px && faceHits / px > 0.35,
+          feature: null,
         });
       }
     }
+    // Assign each facial feature to the grid cell it overlaps most, so eyes,
+    // nose, mouth, etc. each reliably get their own feature instruction even
+    // on a coarse grid. Higher-priority features win a shared cell.
+    const priority = { eye: 6, mouth: 5, nose: 4, brow: 3, ear: 2 };
+    const overlap = (c, f) => {
+      const ox = Math.max(0, Math.min(c.x1, f.x1) - Math.max(c.x0, f.x0));
+      const oy = Math.max(0, Math.min(c.y1, f.y1) - Math.max(c.y0, f.y0));
+      return ox * oy;
+    };
+    state.features.forEach((f) => {
+      let best = null,
+        bestOv = 0;
+      for (const c of cells) {
+        const ov = overlap(c, f);
+        if (ov > bestOv) {
+          bestOv = ov;
+          best = c;
+        }
+      }
+      if (best && bestOv > 0) {
+        if (!best.feature || priority[f.type] > priority[best.feature.type])
+          best.feature = f;
+      }
+    });
+
     state.cells = cells;
     // Face-first ordering for the tutorial (draw the subject before the background)
     state.orderedCells = cells
@@ -615,6 +722,10 @@
 
   function cellInstruction(cell) {
     const b = brightnessWord(cell.brightness);
+    // If this cell sits on a known feature, teach that feature directly.
+    if (cell.feature && cell.hasContent) {
+      return `Cell ${cell.label}: ${cell.feature.tip}`;
+    }
     const facePrefix = cell.inFace ? "👤 Face — take your time. " : "";
     if (!cell.hasContent) {
       if (cell.brightness < 110)
@@ -670,7 +781,11 @@
         type: "cell",
         phase: "detail",
         cell,
-        title: cell.inFace ? `Cell ${cell.label} · face` : `Cell ${cell.label}`,
+        title: cell.feature
+          ? `Cell ${cell.label} · ${cell.feature.label}`
+          : cell.inFace
+          ? `Cell ${cell.label} · face`
+          : `Cell ${cell.label}`,
         text: cellInstruction(cell),
       });
     });
@@ -720,6 +835,7 @@
     computeGradient();
     state.faceBox = detectFaceBox();
     state.guides = computeGuides(state.faceBox);
+    state.features = computeFeatures(state.faceBox);
     buildLines();
     buildShading();
     buildGrid();
@@ -850,8 +966,30 @@
       refCtx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
       refCtx.restore();
     }
-    if (showGuides) drawGuides(refCtx, 1, true);
+    if (showGuides) {
+      drawGuides(refCtx, 1, true);
+      drawFeatureMarks(refCtx);
+    }
     if (activeCell) cellHighlight(refCtx, activeCell);
+  }
+
+  function drawFeatureMarks(ctx) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(181,139,255,0.95)";
+    ctx.fillStyle = "rgba(181,139,255,1)";
+    ctx.lineWidth = 1.5;
+    ctx.font = `${Math.max(9, Math.round(state.w * 0.02))}px Inter, sans-serif`;
+    ctx.textBaseline = "bottom";
+    const seen = {};
+    state.features.forEach((f) => {
+      ctx.strokeRect(f.x0, f.y0, f.x1 - f.x0, f.y1 - f.y0);
+      // label each feature type once to avoid clutter
+      if (!seen[f.type]) {
+        ctx.fillText(f.label, f.x0, f.y0 - 1);
+        seen[f.type] = 1;
+      }
+    });
+    ctx.restore();
   }
 
   function renderComplete(gridProgress = 1, faded = false) {
@@ -1133,6 +1271,162 @@
   helpClose.addEventListener("click", () => (helpModal.hidden = true));
   helpModal.addEventListener("click", (e) => {
     if (e.target === helpModal) helpModal.hidden = true;
+  });
+
+  // ============================================================
+  //  EXPORT / DOWNLOAD / PRINT
+  // ============================================================
+  const exportBtn = $("exportBtn");
+  const exportModal = $("exportModal");
+  const exportClose = $("exportClose");
+
+  function newCanvas(w, h) {
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    return c;
+  }
+
+  function invertCanvas(ctx, w, h) {
+    const id = ctx.getImageData(0, 0, w, h);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      d[i] = 255 - d[i];
+      d[i + 1] = 255 - d[i + 1];
+      d[i + 2] = 255 - d[i + 2];
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+
+  function composeSketch(opts) {
+    const w = state.w,
+      h = state.h;
+    const c = newCanvas(w, h);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(state.full, 0, 0);
+    if (opts.shading) ctx.drawImage(state.shadeCanvas, 0, 0);
+    if (opts.grid) drawGrid(ctx, 1, false);
+    if (opts.invert) invertCanvas(ctx, w, h);
+    return c;
+  }
+
+  // Crisp, printable grid sheet (drawn fresh so it scales cleanly).
+  function composeGridSheet(labels, scale = 2) {
+    const w = state.w,
+      h = state.h;
+    const c = newCanvas(w * scale, h * scale);
+    const ctx = c.getContext("2d");
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = "#c8c8c8";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+    for (let col = 1; col < state.cols; col++) {
+      const x = Math.round(col * state.cellW) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    for (let row = 1; row < state.rows; row++) {
+      const y = Math.round(row * state.cellH) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+    if (labels) {
+      ctx.fillStyle = "#888";
+      ctx.font = `${Math.max(9, Math.round(state.cellW * 0.2))}px Inter, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let col = 0; col < state.cols; col++)
+        ctx.fillText(colLabel(col), (col + 0.5) * state.cellW, 3);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      for (let row = 0; row < state.rows; row++)
+        ctx.fillText(String(row + 1), 3, (row + 0.5) * state.cellH);
+    }
+    return c;
+  }
+
+  function composeReference() {
+    const w = state.w,
+      h = state.h;
+    const c = newCanvas(w, h);
+    const ctx = c.getContext("2d");
+    ctx.drawImage(state.srcCanvas, 0, 0);
+    drawGrid(ctx, 1, false);
+    drawGridLabels(ctx);
+    return c;
+  }
+
+  function downloadCanvas(canvas, name) {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function printCanvas(canvas, title) {
+    const url = canvas.toDataURL("image/png");
+    const wnd = window.open("", "_blank");
+    if (!wnd) {
+      alert("Please allow pop-ups to print, or use Download PNG instead.");
+      return;
+    }
+    wnd.document.write(
+      `<!DOCTYPE html><html><head><title>${title}</title>` +
+        `<style>@page{margin:10mm}html,body{margin:0}` +
+        `body{display:flex;align-items:center;justify-content:center;min-height:100vh}` +
+        `img{max-width:100%;max-height:100vh;height:auto}</style></head>` +
+        `<body><img src="${url}" onload="setTimeout(function(){window.focus();window.print();},100)"></body></html>`
+    );
+    wnd.document.close();
+  }
+
+  const opt = (id) => document.getElementById(id).checked;
+
+  function runExport(action) {
+    switch (action) {
+      case "sketch-png":
+        downloadCanvas(
+          composeSketch({ grid: opt("optGrid"), shading: opt("optShading"), invert: opt("optInvert") }),
+          "my-sketch.png"
+        );
+        break;
+      case "sketch-print":
+        printCanvas(
+          composeSketch({ grid: opt("optGrid"), shading: opt("optShading"), invert: opt("optInvert") }),
+          "My Sketch"
+        );
+        break;
+      case "sheet-png":
+        downloadCanvas(composeGridSheet(opt("optSheetLabels")), "grid-sheet.png");
+        break;
+      case "sheet-print":
+        printCanvas(composeGridSheet(opt("optSheetLabels")), "Grid Sheet");
+        break;
+      case "ref-png":
+        downloadCanvas(composeReference(), "reference-grid.png");
+        break;
+      case "ref-print":
+        printCanvas(composeReference(), "Reference with Grid");
+        break;
+    }
+  }
+
+  exportBtn.addEventListener("click", () => (exportModal.hidden = false));
+  exportClose.addEventListener("click", () => (exportModal.hidden = true));
+  exportModal.addEventListener("click", (e) => {
+    if (e.target === exportModal) exportModal.hidden = true;
+    const btn = e.target.closest("[data-do]");
+    if (btn) runExport(btn.getAttribute("data-do"));
   });
 
   // ============================================================

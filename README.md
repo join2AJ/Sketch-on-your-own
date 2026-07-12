@@ -32,15 +32,30 @@ muddy scribble. XDoG's base blur skips fine texture and produces **thin, connect
 -looking lines**. Full write-up in
 [`resources/photo-to-lineart-algorithms.md`](./resources/photo-to-lineart-algorithms.md).
 
-### 👤 Face-aware
+### 👤 Face-aware, feature by feature
 
 The most important part of a portrait is the face, so the app:
 
 - **Finds the face** using skin-tone analysis (YCbCr — works across skin tones, no libraries or
   network), shown as a dashed box on the reference photo.
-- Adds **Loomis proportion guides** so features are placed correctly (the eyes sit halfway down
-  the head — the #1 beginner fix).
+- **Boosts local contrast on the face** (an unsharp/CLAHE-style pass) so low-contrast features
+  like the eyes, nostrils and lip line actually turn into lines instead of being missed.
+- Adds **Loomis proportion guides** and marks the **eyes, eyebrows, nose, lips and ears** so
+  features are placed correctly (the eyes sit halfway down the head — the #1 beginner fix).
+- Gives **feature-specific instructions** on the cells that land on each feature — how to draw
+  an almond eye with an iris highlight, a cupid's-bow lip, a C-shaped ear, and so on
+  (see [`resources/facial-features.md`](./resources/facial-features.md)).
 - **Draws the face first**, before the background.
+
+### ⬇ Download &amp; print
+
+The **Download / Print** button opens an export panel:
+
+- **Your sketch** as a PNG — with options to include the grid, include the shading, or render it
+  as white lines on black. Or print it directly.
+- A **blank grid sheet** (same proportions as your photo, with A–Z / 1–9 labels) to download or
+  print and **draw on**.
+- Your **reference photo with the grid** overlaid, to keep beside you.
 
 ## How to use it
 

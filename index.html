@@ -68,6 +68,7 @@
       </label>
 
       <button id="buildBtn" class="ghost-btn" title="Watch the whole sketch drawn from scratch">▶ Watch it drawn</button>
+      <button id="exportBtn" class="primary-btn small" title="Download or print">⬇ Download / Print</button>
     </div>
 
     <div class="studio-grid">
@@ -120,6 +121,49 @@
       <ol id="stepsOl"></ol>
     </details>
   </section>
+
+  <!-- Export modal -->
+  <div id="exportModal" class="modal" hidden>
+    <div class="modal-card">
+      <button id="exportClose" class="modal-close">×</button>
+      <h2>Download &amp; print</h2>
+
+      <div class="export-block">
+        <h3>🖼️ Your sketch</h3>
+        <p class="export-sub">The finished line drawing.</p>
+        <div class="export-opts">
+          <label><input type="checkbox" id="optGrid" /> Include grid lines</label>
+          <label><input type="checkbox" id="optShading" checked /> Include shading</label>
+          <label><input type="checkbox" id="optInvert" /> White lines on black</label>
+        </div>
+        <div class="export-actions">
+          <button class="primary-btn small" data-do="sketch-png">⬇ Download PNG</button>
+          <button class="ghost-btn" data-do="sketch-print">🖨️ Print</button>
+        </div>
+      </div>
+
+      <div class="export-block">
+        <h3>▦ Blank grid sheet</h3>
+        <p class="export-sub">An empty lettered/numbered grid to draw on — same proportions as your photo.</p>
+        <div class="export-opts">
+          <label><input type="checkbox" id="optSheetLabels" checked /> Include A–Z / 1–9 labels</label>
+        </div>
+        <div class="export-actions">
+          <button class="primary-btn small" data-do="sheet-png">⬇ Download PNG</button>
+          <button class="ghost-btn" data-do="sheet-print">🖨️ Print</button>
+        </div>
+      </div>
+
+      <div class="export-block">
+        <h3>📷 Reference with grid</h3>
+        <p class="export-sub">Your photo with the grid overlaid — handy to keep beside you.</p>
+        <div class="export-actions">
+          <button class="primary-btn small" data-do="ref-png">⬇ Download PNG</button>
+          <button class="ghost-btn" data-do="ref-print">🖨️ Print</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Help modal -->
   <div id="helpModal" class="modal" hidden>
